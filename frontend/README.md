@@ -19,6 +19,7 @@ Prompt2Web/
     ├── vite.config.js        # Vite + React + Proxy configuration
     ├── tailwind.config.js    # Tailwind theme & color settings
     ├── postcss.config.js     # PostCSS plugins
+    ├── README.md             # Project documentation
     └── src/
         ├── main.jsx          # React DOM entry point
         ├── App.jsx           # App routing & main layout
@@ -28,7 +29,6 @@ Prompt2Web/
         ├── pages/
         │   ├── Landing.jsx   # Hero page & interactive prompt input
         │   ├── Dashboard.jsx # Projects manager & template gallery
-        │   ├── Auth.jsx      # Authentication & user state
         │   └── Editor.jsx    # Complete AI IDE & 3-panel workspace
         │
         ├── components/
@@ -57,7 +57,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app/main.py
 # Or using uvicorn directly:
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main.py:app --reload --port 8000
 ```
 
 The FastAPI backend will start at `http://localhost:8000`.  

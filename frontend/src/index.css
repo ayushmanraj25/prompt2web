@@ -1,0 +1,282 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Prompt2Web - Warm Ochre Canvas + Terracotta Clay KPI Theme with Animations
+   ========================================================================== */
+
+:root {
+  --bg-ochre-canvas: #8b734b;
+  --bg-clay-tile: #381912;
+  --bg-clay-tile-hover: #482118;
+  --border-clay-stone: #693224;
+  --border-clay-strong: #8a4130;
+  --text-cream: #fcf8f2;
+  --text-clay-soft: #d89686;
+  --text-clay-deep: #24110b;
+  --btn-terracotta-bg: #823c2c;
+  --btn-terracotta-hover: #9c4936;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--bg-ochre-canvas);
+    color: var(--text-cream);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+}
+
+/* ==========================================================================
+   Keyframe Animations
+   ========================================================================== */
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.01) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(130, 60, 44, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(130, 60, 44, 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ==========================================================================
+   Terracotta Clay KPI & UI Components with Rich Styling
+   ========================================================================== */
+
+@layer components {
+  /* Animation Utility Classes */
+  .animate-modal-pop {
+    animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.25s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Tactile Clay Card with 3D Bevel & Smooth Elevation */
+  .clay-card {
+    background-color: #381912;
+    border-top: 1px solid #7a3c2e;
+    border-left: 1px solid #6b3325;
+    border-right: 1px solid #6b3325;
+    border-bottom: 1px solid #24110b;
+    border-radius: 1.25rem;
+    padding: 2.25rem;
+    box-shadow: 0 10px 30px rgba(33, 14, 9, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .clay-card:hover {
+    border-color: #a34e3b;
+    background-color: #441f17;
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 18px 45px rgba(33, 14, 9, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .clay-card:active {
+    transform: translateY(-1px) scale(0.99);
+  }
+
+  /* KPI Stat Tile */
+  .kpi-tile {
+    background-color: #33160f;
+    border-top: 1px solid #703729;
+    border-left: 1px solid #5e2c20;
+    border-right: 1px solid #5e2c20;
+    border-bottom: 1px solid #1c0b07;
+    border-radius: 1.25rem;
+    padding: 2rem 2.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    box-shadow: 0 8px 24px rgba(33, 14, 9, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .kpi-tile:hover {
+    border-color: #9e4b38;
+    transform: translateY(-3px);
+    box-shadow: 0 14px 35px rgba(33, 14, 9, 0.55);
+  }
+
+  .kpi-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #fdfaf6;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.03em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #df9b8c;
+  }
+
+  .kpi-sub {
+    font-size: 0.75rem;
+    color: #b57465;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Animated Tactile Terracotta Button */
+  .btn-terracotta {
+    background: linear-gradient(180deg, #964736 0%, #7d3728 100%);
+    color: #fdfaf6;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1.75rem;
+    border-top: 1px solid #b85b46;
+    border-left: 1px solid #964736;
+    border-right: 1px solid #964736;
+    border-bottom: 1px solid #4a1f16;
+    box-shadow: 0 6px 20px rgba(66, 29, 21, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .btn-terracotta:hover {
+    background: linear-gradient(180deg, #a8503d 0%, #8c3f2e 100%);
+    border-top-color: #cf6852;
+    box-shadow: 0 8px 28px rgba(66, 29, 21, 0.65), 0 0 20px rgba(150, 71, 54, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .btn-terracotta:active {
+    transform: translateY(1px) scale(0.97);
+    box-shadow: 0 2px 10px rgba(66, 29, 21, 0.4);
+  }
+
+  .btn-clay-ghost {
+    background-color: #3b1a13;
+    color: #e5aba0;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1.75rem;
+    border: 1px solid #663023;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  .btn-clay-ghost:hover {
+    background-color: #4c2219;
+    border-color: #964836;
+    color: #fdfaf6;
+    transform: translateY(-1px);
+  }
+
+  .btn-clay-ghost:active {
+    transform: translateY(1px) scale(0.97);
+  }
+
+  /* Terracotta Clay Input */
+  .clay-input {
+    background-color: #2b120c;
+    border: 1px solid #663023;
+    border-radius: 0.875rem;
+    padding: 0.875rem 1.25rem;
+    color: #fdfaf6;
+    font-size: 0.875rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .clay-input:focus {
+    outline: none;
+    border-color: #b85b46;
+    background-color: #361710;
+    box-shadow: 0 0 0 3px rgba(184, 91, 70, 0.3), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* ==========================================================================
+   Clay Scrollbar
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #8b734b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5c2b1f;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7a3a2a;
+}
