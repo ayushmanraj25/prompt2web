@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{TITLE}}</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Central Global Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="app-body">
+  <!-- Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-box">
+        <div class="logo-badge">
+          <i class="fa-solid fa-sparkles"></i>
+        </div>
+        <span class="logo-title">Prompt2Web</span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#demo" class="nav-link">Live Demo</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle" class="icon-btn">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <a href="#get-started" class="btn-primary">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="hero-container">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Generated Web App
+      </div>
+
+      <h1 class="hero-heading">
+        Turn Your Imagination Into <br />
+        <span class="gradient-text">Production-Ready Web Apps</span>
+      </h1>
+
+      <p class="hero-subtext">
+        {{DESCRIPTION}}
+      </p>
+
+      <div class="hero-button-group">
+        <button onclick="handlePrimaryAction()" class="btn-primary btn-large">
+          Explore App
+        </button>
+        <button onclick="toggleCounter()" class="btn-secondary btn-large">
+          Interactive Test: <span id="counter" class="counter-highlight">0 clicks</span>
+        </button>
+      </div>
+
+      <!-- Feature Grid -->
+      <div id="features" class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon-box bg-indigo-glow">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <h3 class="feature-title">Instant Generation</h3>
+          <p class="feature-description">Prompt your vision and watch modern HTML, CSS, and JS generate in real-time.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box bg-purple-glow">
+            <i class="fa-solid fa-code"></i>
+          </div>
+          <h3 class="feature-title">Live Multi-File Editor</h3>
+          <p class="feature-description">Inspect structure, customize scripts, and preview edits in an isolated sandbox.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box bg-pink-glow">
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+          <h3 class="feature-title">Responsive Viewports</h3>
+          <p class="feature-description">Simulate Mobile, Tablet, and Desktop layouts seamlessly in one view.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
