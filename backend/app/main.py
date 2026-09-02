@@ -10,16 +10,26 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Any
 import uuid
 import time
-import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Automatically load .env from backend directory regardless of execution cwd
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+load_dotenv()  # Fallback to local cwd .env
 
 try:
     from app.template_manager import FileItem, get_starter_files
+    from app.groq_service import expand_image_prompt
+    from app.image_service import generate_flux_image
 except ImportError:
     from template_manager import FileItem, get_starter_files
+    from groq_service import expand_image_prompt
+    from image_service import generate_flux_image
 
 app = FastAPI(
     title="Prompt2Web API",
-    description="Backend API for AI-assisted web application generation and live editing",
+    description="Backend API for AI-assisted web application generation, Groq prompt expansion, and FLUX.1 live imaging",
     version="1.0.0",
 )
 
@@ -84,6 +94,13 @@ class ChatRequest(BaseModel):
 class PreviewRequest(BaseModel):
     files: List[FileItem]
     entry_file: Optional[str] = "index.html"
+
+
+class ImageGenerateRequest(BaseModel):
+    prompt: str
+    aspect_ratio: Optional[str] = "1:1"
+    enhance_with_groq: Optional[bool] = True
+    seed: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
@@ -289,6 +306,52 @@ def compile_preview(req: PreviewRequest):
         )
 
     return {"compiled_html": compiled_html}
+
+
+@app.post("/api/image/generate")
+async def generate_image(req: ImageGenerateRequest):
+    """
+    2-Stage AI Imaging Pipeline:
+    Stage 1: Groq LPUs expand the user's idea using llama-3.3-70b-versatile.
+    Stage 2: FLUX.1 generates the ultra-high resolution image.
+    """
+    raw_prompt = req.prompt.strip()
+    if not raw_prompt:
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    start_time = time.time()
+
+    # Stage 1: Groq Prompt Engineering
+    if req.enhance_with_groq:
+        enhanced_prompt = await expand_image_prompt(raw_prompt)
+    else:
+        enhanced_prompt = raw_prompt
+
+    # Stage 2: FLUX.1 Generation
+    image_result = await generate_flux_image(
+        prompt=enhanced_prompt,
+        aspect_ratio=req.aspect_ratio or "1:1",
+        seed=req.seed,
+    )
+
+    duration_ms = round((time.time() - start_time) * 1000)
+
+    return {
+        "success": True,
+        "original_prompt": raw_prompt,
+        "enhanced_prompt": enhanced_prompt,
+        "image_url": image_result["image_url"],
+        "width": image_result["width"],
+        "height": image_result["height"],
+        "aspect_ratio": image_result["aspect_ratio"],
+        "seed": image_result["seed"],
+        "models": {
+            "prompt_enhancer": "Groq Llama-3.3-70B-Versatile",
+            "image_generator": "FLUX.1 Diffusion",
+        },
+        "duration_ms": duration_ms,
+        "timestamp": time.time(),
+    }
 
 
 if __name__ == "__main__":

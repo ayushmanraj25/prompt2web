@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../store/useProjectStore';
+import { apiClient } from '../api/client';
 import Footer from '../components/Footer';
 import AccountSettingsModal from '../components/AccountSettingsModal';
 import {
@@ -16,6 +18,12 @@ import {
   Moon,
   Monitor,
   Check,
+  Sparkles,
+  Download,
+  Copy,
+  X,
+  RefreshCw,
+  Zap,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -29,6 +37,15 @@ export default function Dashboard() {
   const [promptInput, setPromptInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [user, setUser] = useState(null);
+
+  // Image Generation States (Groq Llama-3.3-70B + FLUX.1)
+  const [aspectRatio, setAspectRatio] = useState('1:1'); // '1:1' | '16:9' | '9:16'
+  const [imageResult, setImageResult] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [generationStep, setGenerationStep] = useState(''); // 'groq' | 'flux' | ''
 
   // Profile Dropdown & Language State
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -60,6 +77,18 @@ export default function Dashboard() {
     fetchProjects();
   }, [fetchProjects]);
 
+  // Lock background scroll when Image Modal is open
+  useEffect(() => {
+    if (showImageModal) {
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+      return () => {
+        document.documentElement.classList.remove('modal-open');
+        document.body.classList.remove('modal-open');
+      };
+    }
+  }, [showImageModal]);
+
   // Workable Theme Sync with DOM
   useEffect(() => {
     localStorage.setItem('prompt2web_theme', theme);
@@ -71,7 +100,6 @@ export default function Dashboard() {
       } else if (theme === 'dark') {
         root.classList.remove('light-mode');
       } else {
-        // System
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (prefersDark) {
           root.classList.remove('light-mode');
@@ -113,18 +141,53 @@ export default function Dashboard() {
     if (!promptInput.trim()) return;
 
     setIsGenerating(true);
+
+    // =========================================================================
+    // 2-STAGE IMAGE GENERATION (GROQ LLAMA-3.3-70B + FLUX.1 DIFFUSION)
+    // =========================================================================
+    if (activeTab === 'IMAGE') {
+      const promptToGenerate = promptInput.trim();
+      setShowImageModal(true);
+      setIsImageLoading(true);
+      setImageError(false);
+      setImageResult({
+        original_prompt: promptToGenerate,
+        enhanced_prompt: '⚡ Groq Llama-3.3-70B is analyzing and enhancing your visual prompt with professional cinematography attributes...',
+        image_url: '',
+      });
+      setGenerationStep('Groq Llama-3.3-70B is engineering your prompt...');
+
+      try {
+        const res = await apiClient.generateImage(promptToGenerate, {
+          aspect_ratio: aspectRatio,
+          enhance_with_groq: true,
+        });
+        setImageResult(res);
+        setGenerationStep('FLUX.1 Diffusion is synthesizing your high-resolution image...');
+      } catch (err) {
+        console.error('Failed to generate image:', err);
+        setImageError(true);
+      } finally {
+        setIsGenerating(false);
+        setGenerationStep('');
+      }
+      return;
+    }
+
+    // =========================================================================
+    // FSWD FULLSTACK WEB APP GENERATION
+    // =========================================================================
     try {
       const generatedTitle =
         promptInput.trim().slice(0, 32).replace(/[^\w\s]/gi, '').trim() ||
-        (activeTab === 'IMAGE' ? 'AI Image Studio' : 'Fullstack Web App');
+        'Fullstack Web App';
 
       const project = await createNewProject(
         generatedTitle,
         promptInput.trim(),
-        activeTab === 'IMAGE' ? 'portfolio' : 'landing-page'
+        'landing-page'
       );
 
-      // Smooth transition to live workable editor
       setTimeout(() => {
         navigate(`/editor/${project.id}`);
       }, 350);
@@ -132,6 +195,31 @@ export default function Dashboard() {
       console.error('Failed to create project:', err);
       setIsGenerating(false);
     }
+  };
+
+  const handleDownloadImage = async () => {
+    if (!imageResult?.image_url) return;
+    try {
+      const res = await fetch(imageResult.image_url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `prompt2web-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(imageResult.image_url, '_blank');
+    }
+  };
+
+  const handleCopyPrompt = () => {
+    if (!imageResult?.enhanced_prompt) return;
+    navigator.clipboard.writeText(imageResult.enhanced_prompt);
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
   const toggleSpeechRecognition = () => {
@@ -170,7 +258,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-transparent text-slate-100 flex flex-col selection:bg-sky-500 selection:text-white relative overflow-x-hidden animate-fadeIn">
       {/* ================================================================= */}
-      {/* 1. TOP NAVBAR (WITH ELEGANT SUBTLE BORDER AS REQUESTED)           */}
+      {/* 1. TOP NAVBAR (WITH ELEGANT SUBTLE BORDER)                        */}
       {/* ================================================================= */}
       <header className="relative z-40 bg-[#08090b]/40 backdrop-blur-sm px-6 sm:px-12 py-5 flex items-center justify-between select-none border-b border-white/[0.08]">
         {/* Left: Home Button */}
@@ -198,7 +286,7 @@ export default function Dashboard() {
           </button>
 
           {/* ============================================================= */}
-          {/* PROFILE DROPDOWN (ONLY WHAT WAS REQUESTED - NO EXTRA CLUTTER) */}
+          {/* PROFILE DROPDOWN                                              */}
           {/* ============================================================= */}
           {showProfileMenu && (
             <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-[#161922] border border-slate-700/90 p-3 shadow-2xl z-50 animate-modal-pop text-sm font-sans space-y-3">
@@ -223,7 +311,7 @@ export default function Dashboard() {
                   <span>Account Settings</span>
                 </button>
 
-                {/* Language (Shows ONLY English and Hindi as Requested) */}
+                {/* Language (English & Hindi) */}
                 <div className="relative">
                   <button
                     type="button"
@@ -296,7 +384,7 @@ export default function Dashboard() {
                   <span>Logout</span>
                 </button>
 
-                {/* Workable Theme Switcher Pill (Light / System / Dark) */}
+                {/* Workable Theme Switcher Pill */}
                 <div className="flex items-center gap-1 p-1 rounded-full bg-[#0d0f14] border border-slate-800">
                   <button
                     type="button"
@@ -348,9 +436,11 @@ export default function Dashboard() {
       {/* ================================================================= */}
       <section className="relative w-full flex-1 flex flex-col items-center justify-center px-4 sm:px-8 pt-16 sm:pt-20 pb-36 z-10 select-none">
         <div className="relative z-10 w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl flex flex-col items-center space-y-10">
-          {/* Main Heading with large, legible typography */}
+          {/* Main Heading */}
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight text-center font-sans max-w-3xl leading-[1.2]">
-            Start with one prompt. You can change everything later.
+            {activeTab === 'IMAGE'
+              ? 'Imagine with Groq & FLUX. You can change everything later.'
+              : 'Start with one prompt. You can change everything later.'}
           </h1>
 
           {/* Prompt Container with Tabs */}
@@ -381,17 +471,50 @@ export default function Dashboard() {
               >
                 <ImageIcon className={`w-4 h-4 ${activeTab === 'IMAGE' ? 'text-emerald-400' : 'text-slate-500'}`} />
                 <span>IMAGE</span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-400 font-mono font-bold">
+                  GROQ + FLUX
+                </span>
               </button>
             </div>
 
-            {/* Prompt Box with spacious padding & larger font */}
+            {/* Prompt Box with Aspect Ratio Selector for IMAGE mode */}
             <form
               onSubmit={handlePromptSubmit}
               className="w-full rounded-3xl bg-[#181b24] border border-slate-700/80 p-6 sm:p-8 shadow-2xl relative transition-all focus-within:border-slate-500"
             >
+              {/* Aspect Ratio Selector (Visible in IMAGE mode) */}
+              {activeTab === 'IMAGE' && (
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.04]">
+                  <span className="text-xs text-slate-400 font-sans font-medium flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Aspect Ratio:</span>
+                  </span>
+                  <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/5">
+                    {[
+                      { label: '1:1 Square', value: '1:1' },
+                      { label: '16:9 Cinema', value: '16:9' },
+                      { label: '9:16 Story', value: '9:16' },
+                    ].map((ratio) => (
+                      <button
+                        key={ratio.value}
+                        type="button"
+                        onClick={() => setAspectRatio(ratio.value)}
+                        className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                          aspectRatio === ratio.value
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {ratio.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <textarea
                 ref={textareaRef}
-                rows={5}
+                rows={4}
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -403,7 +526,7 @@ export default function Dashboard() {
                 placeholder={
                   activeTab === 'FSWD'
                     ? 'Describe your idea we will bring it to life..'
-                    : 'Describe the image or UI asset you want to generate in detail..'
+                    : 'Describe any image (e.g. "a futuristic cyberpunk supercar in rain") - Groq will enhance & FLUX will generate it..'
                 }
                 className="w-full bg-transparent text-white placeholder:text-slate-500 font-sans text-base sm:text-lg resize-none focus:outline-none leading-relaxed"
                 autoFocus
@@ -420,6 +543,14 @@ export default function Dashboard() {
                 >
                   <Plus className="w-5 h-5" />
                 </button>
+
+                {/* Center Generation Status indicator */}
+                {isGenerating && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 animate-pulse">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{generationStep || 'Generating AI art...'}</span>
+                  </div>
+                )}
 
                 {/* Right: Mic Dictation + Up Arrow Submit */}
                 <div className="flex items-center gap-3">
@@ -444,7 +575,7 @@ export default function Dashboard() {
                         ? 'bg-white hover:bg-neutral-200 text-slate-950 cursor-pointer hover:scale-105 active:scale-90 shadow-lg'
                         : 'bg-white/15 text-slate-500 cursor-not-allowed'
                     }`}
-                    title="Generate Project"
+                    title={activeTab === 'IMAGE' ? 'Generate AI Image' : 'Generate Project'}
                   >
                     <ArrowUp className="w-5 h-5 stroke-[2.5]" />
                   </button>
@@ -470,11 +601,9 @@ export default function Dashboard() {
           <div className="w-full flex justify-center py-4">
             <svg viewBox="0 0 960 130" className="w-full max-w-3xl sm:max-w-4xl h-auto select-none overflow-visible">
               <defs>
-                {/* Dot Pattern mimicking LED Scoreboard Matrix */}
                 <pattern id="greenDotLed" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
                   <circle cx="3.5" cy="3.5" r="2.35" fill="#22c55e" />
                 </pattern>
-                {/* Neon Green Glow */}
                 <filter id="neonLedGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="3.5" result="blur" />
                   <feMerge>
@@ -542,8 +671,7 @@ export default function Dashboard() {
       <Footer />
 
       {/* ================================================================= */}
-      {/* 5. ACCOUNT SETTINGS MODAL (MATCHES media_1788378985440.png)       */}
-      {/* INCLUDES DELETE ACCOUNT AT THE BOTTOM                             */}
+      {/* 5. ACCOUNT SETTINGS MODAL                                         */}
       {/* ================================================================= */}
       <AccountSettingsModal
         isOpen={isAccountSettingsOpen}
@@ -551,6 +679,168 @@ export default function Dashboard() {
         user={user}
         onUpdateUser={setUser}
       />
+
+      {/* ================================================================= */}
+      {/* 6. GROQ + FLUX.1 GENERATED IMAGE SHOWCASE MODAL                   */}
+      {/* (MOUNTED VIA CREATEPORTAL AT DOCUMENT BODY LEVEL)                 */}
+      {/* ================================================================= */}
+      {showImageModal && imageResult && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-modal-overlay select-none"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div
+            className="w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#12151d] border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row relative animate-modal-pop my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Left: High-Res Image Display with Loading Shimmer */}
+            <div className="w-full md:w-3/5 bg-black/90 flex items-center justify-center p-4 relative min-h-[380px] overflow-hidden">
+              {/* Animated Loading Overlay */}
+              {isImageLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0e1117]/95 z-20 space-y-4 p-6 text-center">
+                  <div className="w-12 h-12 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin" />
+                  <div className="space-y-1">
+                    <div className="text-xs font-mono text-emerald-400 font-bold animate-pulse flex items-center justify-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{generationStep || 'FLUX.1 is rendering your masterpiece...'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-sans">
+                      High-resolution diffusion synthesis typically takes 3–5 seconds
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Generated Image Tag */}
+              {imageResult.image_url ? (
+                <img
+                  key={imageResult.image_url}
+                  src={imageResult.image_url}
+                  alt={imageResult.original_prompt}
+                  onLoad={() => setIsImageLoading(false)}
+                  onError={() => {
+                    setIsImageLoading(false);
+                    setImageError(true);
+                  }}
+                  className={`max-h-[75vh] w-auto rounded-2xl object-contain shadow-2xl border border-white/5 transition-opacity duration-500 ${
+                    isImageLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  loading="eager"
+                />
+              ) : null}
+
+              {!isImageLoading && !imageError && (
+                <span className="absolute bottom-6 left-6 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[11px] font-mono text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3" />
+                  <span>FLUX.1 Diffusion (1024px)</span>
+                </span>
+              )}
+
+              {imageError && (
+                <div className="text-center p-6 space-y-3 z-10">
+                  <p className="text-xs text-rose-400 font-sans">Network timeout loading image preview.</p>
+                  {imageResult.image_url && (
+                    <a
+                      href={imageResult.image_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs inline-block font-sans"
+                    >
+                      Open Image in New Tab
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Groq Prompt Engineering & Actions Panel */}
+            <div className="w-full md:w-2/5 p-6 sm:p-8 flex flex-col justify-between space-y-6 overflow-y-auto">
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold font-mono">
+                      Groq ⚡ Llama-3.3-70B
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowImageModal(false)}
+                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Original Prompt */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 tracking-wider">
+                    Your Original Prompt:
+                  </span>
+                  <p className="text-xs text-slate-300 font-sans italic bg-white/5 p-2.5 rounded-xl border border-white/5">
+                    "{imageResult.original_prompt}"
+                  </p>
+                </div>
+
+                {/* Groq Enhanced Master Prompt */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold tracking-wider flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Groq Enhanced Master Prompt:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyPrompt}
+                      className="text-[11px] font-sans text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      {copiedPrompt ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span className="text-emerald-400">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-200 font-sans leading-relaxed bg-[#181b24] p-3 rounded-xl border border-slate-700/80 max-h-40 overflow-y-auto">
+                    {imageResult.enhanced_prompt}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons: Download & Regenerate */}
+              <div className="space-y-2.5 pt-4 border-t border-white/5">
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  className="w-full py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-slate-950 font-bold text-xs font-sans flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg cursor-pointer"
+                >
+                  <Download className="w-4 h-4 stroke-[2.2]" />
+                  <span>Download High-Res PNG</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImageModal(false);
+                    handlePromptSubmit();
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-medium text-xs font-sans flex items-center justify-center gap-2 transition-colors cursor-pointer border border-white/5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Regenerate New Variation</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
